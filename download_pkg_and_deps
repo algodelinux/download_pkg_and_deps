@@ -1,0 +1,23 @@
+#!/bin/bash
+#
+# Script para descargar un paquete y todas sus dependencias
+# Le pasamos como parámentro el nombre de un paquete y lo descargará
+# junto con todas sus dependencias creando un directorio con el nombre del paquete
+# Esteban M. Navas Martín <algodelinux@gmail.com>
+# 12/12/2015
+
+if [ $# -eq 0 ]; then
+   echo "Debe especificar el paquete a descargar"
+   echo "Sintaxix: $0 package"
+   exit 1
+fi
+
+apt-get update && apt-cache show $1 2>/dev/null
+
+if [ $? -eq 0 ]; then
+   mkdir $1
+   cd $1
+   apt-get download $1 && apt-cache depends -i $1 | awk '{print $2}' | xargs  apt-get download
+else
+   echo "El paquete $1 no existe en los repositorios"
+fi
