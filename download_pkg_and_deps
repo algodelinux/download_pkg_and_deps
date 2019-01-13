@@ -15,6 +15,7 @@ fi
 apt-get update && apt-cache show $1 2>/dev/null
 
 if [ $? -eq 0 ]; then
+   [ -d $1 ] && rm -r $1
    mkdir $1
    cd $1
    apt-get download $1 && apt-cache depends -i $1 | awk '{print $2}' | xargs  apt-get download
