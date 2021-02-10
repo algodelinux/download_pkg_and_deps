@@ -4,7 +4,8 @@
 # Le pasamos como parámentro el nombre de un paquete y lo descargará
 # junto con todas sus dependencias creando un directorio con el nombre del paquete
 # Esteban M. Navas Martín <algodelinux@gmail.com>
-# 12/12/2015
+# Fecha de creación: 12/12/2015
+# Fecha de última modificación: 10/02/2021
 
 if [ $# -eq 0 ]; then
    echo "Debe especificar el paquete a descargar"
@@ -12,13 +13,14 @@ if [ $# -eq 0 ]; then
    exit 1
 fi
 
-apt-get update && apt-cache show $1 2>/dev/null
+apt-get update && apt-cache show $1 > /dev/null 2>&1
 
 if [ $? -eq 0 ]; then
    [ -d $1 ] && rm -r $1
    mkdir $1
    cd $1
-   apt-get download $1 && apt-cache depends -i $1 | awk '{print $2}' | xargs  apt-get download
+   LC_ALL=C apt-get download $1
+   LC_ALL=C apt-cache depends -i $1 | grep Depends | sed -e 's/^ *.Depends://' -e '/<.*>/d' | uniq | xargs apt-get download
 else
    echo "El paquete $1 no existe en los repositorios"
 fi
