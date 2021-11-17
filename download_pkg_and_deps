@@ -20,7 +20,7 @@ if [ $? -eq 0 ]; then
    mkdir $1
    cd $1
    LC_ALL=C apt-get download $1
-   LC_ALL=C apt-cache depends -i $1 | grep Depends | sed -e 's/^ *.Depends://' -e '/<.*>/d' | uniq | xargs apt-get download
+   LC_ALL=C apt-cache depends -i $1 | grep Depends | sed -e 's/^ *.Depends://' | tr -d '<>' | uniq | xargs apt-get download
 else
    echo "El paquete $1 no existe en los repositorios"
 fi
