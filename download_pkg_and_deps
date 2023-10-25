@@ -27,12 +27,12 @@ if [ $? -eq 0 ]; then
    LC_ALL=C apt-get download $paquete_principal
 
    # Descargamos las dependencias del paquete solicitado
-   dependenciasn1=$(LC_ALL=C apt-cache depends -i $paquete_principal | grep Depends | grep -v PreDepends | sed -e 's/^ *.Depends://' -e '/<.*>/d'" | uniq)
+   dependenciasn1=$(LC_ALL=C apt-cache depends -i $paquete_principal | grep Depends | grep -v PreDepends | sed -e 's/^ *.Depends://' -e '/<.*>/d' | uniq)
    LC_ALL=C apt-get download $dependenciasn1
 
    # Descargamos las dependencias de las dependencias
    for dependencia in $dependenciasn1; do
-      dependenciasn2=$(LC_ALL=C apt-cache depends -i $dependencia | grep Depends  | grep -v PreDepends | sed -e 's/^ *.Depends://' -e '/<.*>/d'" | uniq)
+      dependenciasn2=$(LC_ALL=C apt-cache depends -i $dependencia | grep Depends  | grep -v PreDepends | sed -e 's/^ *.Depends://' -e '/<.*>/d' | uniq)
       LC_ALL=C apt-get download $dependenciasn2
    done
 
