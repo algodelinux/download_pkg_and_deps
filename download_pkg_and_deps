@@ -2,10 +2,11 @@
 #
 # Script para descargar un paquete y todas sus dependencias
 # Le pasamos como parámentro el nombre de un paquete y lo descargará
-# junto con todas sus dependencias creando un directorio con el nombre del paquete
+# junto con todas las dependencias de primer y segundo nivel 
+# creando un directorio con el nombre del paquete
 # Esteban M. Navas Martín <algodelinux@gmail.com>
 # Fecha de creación: 12/12/2015
-# Fecha de última modificación: 10/02/2021
+# Fecha de última modificación: 25/10/2023
 
 if [ $# -eq 0 ]; then
    echo "Debe especificar el paquete a descargar"
@@ -13,15 +14,29 @@ if [ $# -eq 0 ]; then
    exit 1
 fi
 
-apt-get update && apt-cache show $1 > /dev/null 2>&1
+paquete_principal=$1
+
+apt-get update && apt-cache show $paquete_principal > /dev/null 2>&1
 
 if [ $? -eq 0 ]; then
-   [ -d $1 ] && rm -r $1
-   mkdir $1
-   cd $1
-   LC_ALL=C apt-get download $1
-   LC_ALL=C apt-cache depends -i $1 | grep Depends | sed -e 's/^ *.Depends://' | tr -d '<>' | uniq | xargs apt-get download
+   [ -d $paquete_principal ] && rm -r $paquete_principal
+   mkdir $paquete_principal
+   cd $paquete_principal
+
+   # Descargamos el paquete solicitado
+   LC_ALL=C apt-get download $paquete_principal
+
+   # Descargamos las dependencias del paquete solicitado
+   dependenciasn1=$(LC_ALL=C apt-cache depends -i $paquete_principal | grep Depends | grep -v PreDepends | sed -e 's/^ *.Depends://' -e '/<.*>/d'" | uniq)
+   LC_ALL=C apt-get download $dependenciasn1
+
+   # Descargamos las dependencias de las dependencias
+   for dependencia in $dependenciasn1; do
+      dependenciasn2=$(LC_ALL=C apt-cache depends -i $dependencia | grep Depends  | grep -v PreDepends | sed -e 's/^ *.Depends://' -e '/<.*>/d'" | uniq)
+      LC_ALL=C apt-get download $dependenciasn2
+   done
+
 else
-   echo "El paquete $1 no existe en los repositorios"
+   echo "El paquete $paquete_principal no existe en los repositorios"
 fi
 
