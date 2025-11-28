@@ -1,42 +1,71 @@
 #!/bin/bash
 #
-# Script para descargar un paquete y todas sus dependencias
-# Le pasamos como parámentro el nombre de un paquete y lo descargará
-# junto con todas las dependencias de primer y segundo nivel 
-# creando un directorio con el nombre del paquete
-# Esteban M. Navas Martín <algodelinux@gmail.com>
-# Fecha de creación: 12/12/2015
-# Fecha de última modificación: 25/10/2023
+# Script para descargar un paquete y sus dependencias hasta un nivel especificado
+# Autor: Esteban M. Navas Martín <algodelinux@gmail.com>
+# Última modificación: 23/11/2025
 
+set -euo pipefail
+
+# Verificar si se ejecuta como root
+if [ "$EUID" -ne 0 ]; then
+    echo "Este script debe ejecutarse como root."
+    echo "Usa: sudo $0 paquete [nivel_dependencia]"
+    exit 1
+fi
+
+# Parámetros
 if [ $# -eq 0 ]; then
-   echo "Debe especificar el paquete a descargar"
-   echo "Sintaxix: $0 package"
-   exit 1
+    echo "Debe especificar el paquete a descargar"
+    echo "Sintaxis: $0 paquete [nivel_dependencia]"
+    exit 1
 fi
 
-paquete_principal=$1
+paquete_principal="$1"
+nivel="${2:-1}"   # Nivel de dependencias por defecto: 1
+INFO_DIR="/var/lib/dpkg/info"
 
-apt-get update && apt-cache show $paquete_principal > /dev/null 2>&1
+# Actualizar lista de paquetes
+apt-get update -qq
 
-if [ $? -eq 0 ]; then
-   [ -d $paquete_principal ] && rm -r $paquete_principal
-   mkdir $paquete_principal
-   cd $paquete_principal
-
-   # Descargamos el paquete solicitado
-   LC_ALL=C apt-get download $paquete_principal
-
-   # Descargamos las dependencias del paquete solicitado
-   dependenciasn1=$(LC_ALL=C apt-cache depends -i $paquete_principal | grep Depends | grep -v PreDepends | sed -e 's/^ *.Depends://' -e '/<.*>/d' | uniq)
-   LC_ALL=C apt-get download $dependenciasn1
-
-   # Descargamos las dependencias de las dependencias
-   for dependencia in $dependenciasn1; do
-      dependenciasn2=$(LC_ALL=C apt-cache depends -i $dependencia | grep Depends  | grep -v PreDepends | sed -e 's/^ *.Depends://' -e '/<.*>/d' | uniq)
-      LC_ALL=C apt-get download $dependenciasn2
-   done
-
-else
-   echo "El paquete $paquete_principal no existe en los repositorios"
+# Comprobar que el paquete existe
+if ! apt-cache show "$paquete_principal" > /dev/null 2>&1; then
+    echo "El paquete $paquete_principal no existe en los repositorios"
+    exit 1
 fi
 
+# Preparar directorio
+[ -d "$paquete_principal" ] && rm -rf "$paquete_principal"
+mkdir -p "$paquete_principal"
+cd "$paquete_principal" || exit
+
+# Función para obtener dependencias de un paquete (primer nivel)
+get_depends() {
+    local pkg="$1"
+    LC_ALL=C apt-cache depends -i "$pkg" \
+        | awk '/Depends:/ && !/PreDepends/ {gsub(/<|>/,"",$2); print $2}' \
+        | sort -u
+}
+
+# Array con paquetes a descargar
+paquetes_a_descargar=("$paquete_principal")
+descargados=()
+
+for ((i=0; i<nivel; i++)); do
+    nuevas_dependencias=()
+    for pkg in "${paquetes_a_descargar[@]}"; do
+        # Evitar descargar paquetes repetidos
+        if [[ ! " ${descargados[*]} " =~ " ${pkg} " ]]; then
+            nuevas_dependencias+=( $(get_depends "$pkg") )
+            descargados+=("$pkg")
+        fi
+    done
+    paquetes_a_descargar=("${nuevas_dependencias[@]}")
+done
+
+# Descargar todos los paquetes encontrados
+all_packages=("${descargados[@]}" "${paquetes_a_descargar[@]}")
+if [ ${#all_packages[@]} -gt 0 ]; then
+    echo "${all_packages[@]}" | xargs -r -n1 apt-get download
+fi
+
+echo "Descarga completada en $(pwd)"
