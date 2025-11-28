@@ -34,7 +34,7 @@ sudo ./download_pkg_and_deps paquete [nivel_dependencia]
 
 ---
 
-## ## ✒️ Authors
+## ✒️ Authors
 
 **Esteban M. Navas Martín**  algodelinux@gmail.com
 
