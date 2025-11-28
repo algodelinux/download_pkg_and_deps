@@ -1,10 +1,9 @@
 # download_pkg_and_deps
 
+## 📜 Overview
+
 Script en Bash para **descargar un paquete Debian y sus dependencias** hasta un nivel de profundidad especificado.  
 Útil cuando necesitas preparar repositorios locales, realizar instalaciones en sistemas sin Internet o analizar árboles de dependencias.
-
-Autor: **Esteban M. Navas Martín**  
-Última actualización: **23/11/2025**
 
 ---
 
@@ -18,7 +17,25 @@ Autor: **Esteban M. Navas Martín**
 
 ---
 
-## 📦 Sintaxis
+## 📦 Instalación
+
+```bash
+   wget --no-check-certificate -O /usr/local/sbin/download_pkg_and_deps https://github.com/algodelinux/download_pkg_and_deps/raw/master/download_pkg_and_deps  
+   chmod 755 /usr/local/sbin/download_pkg_and_deps
+```
+
+---
+
+## 🛠 Sintaxis
 
 ```bash
 sudo ./download_pkg_and_deps paquete [nivel_dependencia]
+```
+
+---
+
+## ## ✒️ Authors
+
+**Esteban M. Navas Martín**  algodelinux@gmail.com
+
+---
